@@ -76,7 +76,7 @@
         <input type="number" id="level" value="3" min="1" max="14" step="1">
         <div class="range-info" id="level-range-info">최소: 1, 최대: 14</div>
         
-        <button onclick="applySettings()">적용</button>
+        <button id="applyButton">적용</button>
     </div>
 
     <!-- 지도 표시될 부분 -->
@@ -88,7 +88,7 @@
     </div>
 
     <!-- 캡쳐 버튼 -->
-    <button class="capture-button" onclick="captureMap()">결과 캡쳐</button>
+    <button class="capture-button" id="captureButton">결과 캡쳐</button>
 
     <!-- 카카오 지도 API 스크립트 -->
     <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=33fc533b32e46d8470a7cbc88a934a37"></script> <!-- 자신의 API 키로 대체 -->
@@ -136,8 +136,8 @@
             var height = document.getElementById('height').value;
             var level = parseInt(document.getElementById('level').value);
 
-            mapContainer.style.width = width;
-            mapContainer.style.height = height;
+            mapContainer.style.width = width + "%";  // 백분율로 변경
+            mapContainer.style.height = height + "px";  // px로 설정
 
             map.setLevel(level);
 
@@ -183,6 +183,10 @@
             // 좌표를 화면에 표시
             document.getElementById('coordinateDisplay').innerHTML = '좌표: (위도: ' + lat.toFixed(6) + ', 경도: ' + lng.toFixed(6) + ')';
         });
+
+        // 버튼 이벤트 리스너
+        document.getElementById('applyButton').addEventListener('click', applySettings);
+        document.getElementById('captureButton').addEventListener('click', captureMap);
     </script>
 </body>
 </html>
