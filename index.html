@@ -1,34 +1,188 @@
-<!DOCTYPE HTML>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>카카오 지도</title>
+    <title>카카오 지도 현위치</title>
     <style>
-        /* 지도 크기 설정 */
+        body {
+            margin: 0;
+            padding: 0;
+        }
         #map {
             width: 100%;
             height: 500px;
+            margin-top: 250px;
+        }
+        .controls {
+            position: absolute;
+            top: 20px;
+            left: 10px;
+            z-index: 1000;
+            background-color: rgba(255, 255, 255, 0.7);
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .controls input {
+            margin-right: 10px;
+        }
+        .output {
+            margin-top: 10px;
+            font-size: 16px;
+        }
+        .range-info {
+            font-size: 14px;
+            color: #555;
+            margin-top: 5px;
+        }
+        .capture-button {
+            position: absolute;
+            top: 20px;
+            right: 10px;
+            padding: 10px;
+            background-color: #007aff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            z-index: 1000;
+        }
+        .capture-button:hover {
+            background-color: #005bb5;
+        }
+        .coordinates {
+            position: absolute;
+            top: 90px;
+            right: 10px;
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 14px;
+            z-index: 1000;
         }
     </style>
 </head>
 <body>
-    <h1>카카오 지도 API 예시</h1>
-    <div id="map"></div> <!-- 지도 표시될 부분 -->
+    <!-- 입력 필드: 가로/세로 비율, 확대 레벨 -->
+    <div class="controls">
+        <label for="width">지도 가로 크기 (px): </label>
+        <input type="number" id="width" value="10000" min="1" step="1">
+        <div class="range-info" id="width-range-info">최소: 1px, 최대: 100%</div>
+        
+        <label for="height">지도 세로 크기 (px): </label>
+        <input type="number" id="height" value="10000" min="1" step="1">
+        <div class="range-info" id="height-range-info">최소: 1px, 최대: 1000px</div>
+
+        <label for="level">확대 레벨: </label>
+        <input type="number" id="level" value="3" min="1" max="14" step="1">
+        <div class="range-info" id="level-range-info">최소: 1, 최대: 14</div>
+        
+        <button onclick="applySettings()">적용</button>
+    </div>
+
+    <!-- 지도 표시될 부분 -->
+    <div id="map"></div> 
+
+    <!-- 좌표 표시 부분 -->
+    <div class="coordinates" id="coordinateDisplay">
+        좌표: (위도: 37.563417, 경도: 126.841844)
+    </div>
+
+    <!-- 캡쳐 버튼 -->
+    <button class="capture-button" onclick="captureMap()">결과 캡쳐</button>
 
     <!-- 카카오 지도 API 스크립트 -->
     <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=33fc533b32e46d8470a7cbc88a934a37"></script> <!-- 자신의 API 키로 대체 -->
+    
+    <!-- html2canvas 라이브러리 추가 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/0.4.1/html2canvas.min.js"></script>
 
     <script>
-        // 지도 옵션 설정
-        var mapContainer = document.getElementById('map'), // 지도를 표시할 div
-            mapOption = {
-                center: new kakao.maps.LatLng(33.450701, 126.570667), // 지도의 중심좌표
-                level: 3 // 지도의 확대 레벨
-            };
-
-        // 지도를 생성
+        var mapContainer = document.getElementById('map'); // 지도를 표시할 div
+        var mapOption = {
+            center: new kakao.maps.LatLng(37.563417, 126.841844), // 기본 중심 좌표
+            level: 3, // 지도의 확대 레벨
+            mapTypeId: kakao.maps.MapTypeId.SKYVIEW // 스카이뷰(위성 지도)로 설정
+        };
         var map = new kakao.maps.Map(mapContainer, mapOption);
+
+        // Geolocation API를 사용하여 현위치 가져오기
+        function setCurrentLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    var lat = position.coords.latitude;  // 위도
+                    var lng = position.coords.longitude; // 경도
+                    var locPosition = new kakao.maps.LatLng(lat, lng); // 카카오맵 좌표로 변환
+
+                    // 현위치로 지도 중심 변경
+                    map.setCenter(locPosition);
+
+                    // 좌표를 화면에 표시
+                    document.getElementById('coordinateDisplay').innerHTML = 
+                        '좌표: (위도: ' + lat.toFixed(6) + ', 경도: ' + lng.toFixed(6) + ')';
+                }, function(error) {
+                    alert("현재 위치를 가져올 수 없습니다.");
+                });
+            } else {
+                alert("이 브라우저에서는 위치 정보를 지원하지 않습니다.");
+            }
+        }
+
+        // 현위치로 지도 중심 변경
+        setCurrentLocation();
+
+        // 입력값을 적용하는 함수
+        function applySettings() {
+            var width = document.getElementById('width').value;
+            var height = document.getElementById('height').value;
+            var level = parseInt(document.getElementById('level').value);
+
+            mapContainer.style.width = width;
+            mapContainer.style.height = height;
+
+            map.setLevel(level);
+
+            document.getElementById('currentWidth').textContent = width;
+            document.getElementById('currentHeight').textContent = height + "px";
+            document.getElementById('currentLevel').textContent = level;
+        }
+
+        // 화면 캡쳐 함수
+        function captureMap() {
+            html2canvas(document.getElementById("map"), {
+                ignoreElements: function(element) {
+                    // 축척과 Kakao 로고를 제외하려면 해당 요소의 클래스를 체크
+                    return element.classList.contains("kakao-maps-roadview") || 
+                           element.classList.contains("kakao-maps-mapview") || 
+                           element.classList.contains("kakao-maps-control");
+                }
+            }).then(function(canvas) {
+                // 새 창을 열어서 이미지 미리보기
+                var newWindow = window.open("", "_blank");
+                newWindow.document.write("<h2>지도 캡쳐 이미지</h2>");
+                newWindow.document.write("<img src='" + canvas.toDataURL("image/png") + "' />");
+
+                // 다운로드 버튼 추가
+                var downloadButton = newWindow.document.createElement("button");
+                downloadButton.textContent = "이미지 다운로드";
+                downloadButton.onclick = function() {
+                    var link = document.createElement("a");
+                    link.href = canvas.toDataURL("image/png");
+                    link.download = "map_capture.png";  // 파일 이름 설정
+                    link.click();
+                };
+                newWindow.document.body.appendChild(downloadButton);
+            });
+        }
+
+        // 마우스 위치 좌표 표시
+        kakao.maps.event.addListener(map, 'mousemove', function(mouseEvent) {
+            var latlng = mouseEvent.latLng; // 마우스 위치의 좌표
+            var lat = latlng.getLat(); // 위도
+            var lng = latlng.getLng(); // 경도
+            
+            // 좌표를 화면에 표시
+            document.getElementById('coordinateDisplay').innerHTML = '좌표: (위도: ' + lat.toFixed(6) + ', 경도: ' + lng.toFixed(6) + ')';
+        });
     </script>
 </body>
 </html>
